@@ -164,7 +164,7 @@ def build_plan(sales, inventory, bom, open_pos, lead_times, today: date = None):
     sales["_key"] = (sales["customer_type"].str.lower() != "key").astype(int)
     sales = sales.sort_values(["due_date", "_key"]).reset_index(drop=True)
 
-    results, total_need = [], {}
+    results, total_need, short_for = [], {}, {}
     for _, o in sales.iterrows():
         needs = {}
         explode_bom(o["product"], o["qty"], bom, needs)
@@ -209,6 +209,8 @@ def build_plan(sales, inventory, bom, open_pos, lead_times, today: date = None):
             why = f"{o['customer_type']} customer, due in {days_left} days. " + "; ".join(parts) + "."
             action = " | ".join(acts) + ". Or tell the customer / split the delivery."
             short_txt = ", ".join(f"{k}: {v:g}" for k, v in shortages.items())
+            for k, v in shortages.items():
+                short_for.setdefault(k, []).append(f"{o['order_id']} ({v:g} short)")
 
         results.append({
             "Order": o["order_id"], "Customer": o["customer"], "Type": o["customer_type"],
@@ -227,6 +229,5 @@ def build_plan(sales, inventory, bom, open_pos, lead_times, today: date = None):
         oh = float(inventory.loc[inventory["item_code"] == item, "on_hand"].sum())
         inc = float(open_pos.loc[open_pos["item_code"] == item, "qty"].sum())
         mats.append({"Material": item, "Needed (all orders)": need, "On hand": oh,
-                     "Incoming POs": inc, "Gap": max(0.0, need - oh - inc),
-                     "Left after on-hand only": oh - need})
+                     "Incoming POs": inc, "Causing at-risk order": ", ".join(short_for.get(item, []))})
     return orders, pd.DataFrame(mats)
