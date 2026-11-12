@@ -260,12 +260,12 @@ with tab_c:
 
     st.markdown("#### Materials across all orders")
     st.dataframe(
-        mats.style.apply(lambda r: ["background-color:#fff3cd" if r["Gap"] > 0 else "" for _ in r], axis=1
-                         ).format({c: "{:g}" for c in mats.columns if c != "Material"}),
+        mats.style.apply(lambda r: ["background-color:#fff3cd" if r["Causing at-risk order"] else "" for _ in r], axis=1
+                         ).format({c: "{:g}" for c in mats.columns if c not in ("Material", "Causing at-risk order")}),
         width="stretch", hide_index=True)
-    st.caption("A material can look fine in total but still be short on a given due date, because a purchase order "
-               "arrives too late. Totals here include at-risk orders, so gaps can look bigger than the order list. "
-               "The priority list checks each order against its own due date.")
+    st.caption("Highlighted rows are the materials causing an at-risk order. Totals add up all six orders, so a "
+               "material can look tight overall without being short for any order's due date. "
+               "The priority list above is the real decision.")
 
     st.markdown("#### Plain-language summary")
     if st.button("Explain this plan"):
