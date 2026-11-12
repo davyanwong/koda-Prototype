@@ -143,7 +143,8 @@ with tab_b:
 
         st.dataframe(
             summary.style.apply(
-                lambda r: ["background-color:#ffe0e0" if r["Status"] == "Review" else "" for _ in r], axis=1),
+                lambda r: ["background-color:#ffe0e0" if r["Status"] == "Review" else "" for _ in r], axis=1
+            ).format({"Total": "{:,.2f}"}),
             width="stretch", hide_index=True)
 
         st.markdown("#### Review one invoice")
@@ -160,7 +161,8 @@ with tab_b:
             st.markdown("**Matching Koda records**")
             po_no = r["inv"].get("po_no", "")
             st.dataframe(po_df[po_df["po_no"] == po_no] if po_no else po_df.iloc[0:0],
-                         width="stretch", hide_index=True)
+                         width="stretch", hide_index=True,
+                         column_config={"unit_price": st.column_config.NumberColumn(format="%.2f")})
             st.dataframe(grn_df[grn_df["po_no"] == po_no] if po_no else grn_df.iloc[0:0],
                          width="stretch", hide_index=True)
 
@@ -168,7 +170,10 @@ with tab_b:
         if not r["table"].empty:
             st.dataframe(
                 r["table"].style.apply(
-                    lambda row: ["background-color:#ffe0e0" if row["Result"] != "OK" else "" for _ in row], axis=1),
+                    lambda row: ["background-color:#ffe0e0" if row["Result"] != "OK" else "" for _ in row], axis=1
+                ).format({"Inv qty": "{:,.0f}", "PO qty": "{:,.0f}", "Received": "{:,.0f}",
+                          "Inv price": "{:,.2f}", "PO price": "{:,.2f}", "Price diff %": "{:+.1f}%"},
+                         na_rep="-"),
                 width="stretch", hide_index=True)
         if r["issues"]:
             st.error(f"{len(r['issues'])} thing(s) to check")
@@ -255,7 +260,8 @@ with tab_c:
 
     st.markdown("#### Materials across all orders")
     st.dataframe(
-        mats.style.apply(lambda r: ["background-color:#fff3cd" if r["Gap"] > 0 else "" for _ in r], axis=1),
+        mats.style.apply(lambda r: ["background-color:#fff3cd" if r["Gap"] > 0 else "" for _ in r], axis=1
+                         ).format({c: "{:g}" for c in mats.columns if c != "Material"}),
         width="stretch", hide_index=True)
     st.caption("A material can look fine in total but still be short on a given due date, because a purchase order "
                "arrives too late. Totals here include at-risk orders, so gaps can look bigger than the order list. "
